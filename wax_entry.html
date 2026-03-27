@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage - Compound Wax</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; background-color: #f4f7f6; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 92%; max-width: 500px; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+        .input-group { position: relative; margin-bottom: 12px; }
+        .input-box { width: 100%; padding: 14px 15px 14px 45px; font-size: 16px; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; text-transform: uppercase; font-weight: 600; }
+        .input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #7f8c8d; }
+        .btn { padding: 12px; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; width: 100%; margin-top: 10px; transition: 0.3s; }
+        .save-btn { background-color: #27ae60; }
+        .save-btn:hover { background-color: #219150; }
+        .table-container { margin-top: 20px; width: 100%; max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; }
+        td { border-bottom: 1px solid #eee; padding: 12px; font-size: 14px; font-weight: 600; color: #2c3e50; }
+        .edit-input { width: 80px; padding: 6px; border-radius: 6px; border: 1px solid #3498db; text-align: center; font-weight: bold; }
+        .action-btns { display: flex; gap: 8px; justify-content: flex-end; }
+        .edit-btn { background: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+        .del-btn { background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3 style="text-align: center; margin-top: 0;">Manage Data</h3>
+        <div class="input-group">
+            <span class="input-icon">🔖</span>
+            <input type="text" id="setCode" class="input-box" placeholder="Compound Code">
+        </div>
+        <div class="input-group">
+            <span class="input-icon">⚖️</span>
+            <input type="text" id="setWeight" class="input-box" placeholder="Weight (0.00)">
+        </div>
+        <button class="btn save-btn" onclick="saveData()">+ Add New Compound</button>
+
+        <div class="table-container">
+            <table>
+                <tbody id="listBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyB4akOCR4LTOK6HyvnxwMc7SKpbrMzjNC0",
+            authDomain: "compound-workaway.firebaseapp.com",
+            databaseURL: "https://compound-workaway-default-rtdb.firebaseio.com",
+            projectId: "compound-workaway",
+            storageBucket: "compound-workaway.firebasestorage.app",
+            messagingSenderId: "1020479561110",
+            appId: "1:1020479561110:web:f1cb9448e2bcf9184811b7"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const waxRef = database.ref('w');
+        let db = {};
+
+        waxRef.on('value', (snapshot) => {
+            db = snapshot.val() || {};
+            renderList();
+        });
+
+        function saveData() {
+            const codeInput = document.getElementById('setCode').value.toUpperCase().trim();
+            const weight = document.getElementById('setWeight').value.trim();
+            
+            if (!codeInput || !weight) {
+                alert("Please enter both code and weight!");
+                return;
+            }
+
+            const safeKey = codeInput.replace(/\./g, '_');
+
+            // 1. ആവർത്തനം ഒഴിവാക്കാനുള്ള ചെക്കിംഗ് (Duplicate Check)
+            if (db[safeKey]) {
+                alert("ഈ കോഡ് നിലവിലുണ്ട്! മാറ്റം വരുത്തണമെങ്കിൽ താഴെയുള്ള ലിസ്റ്റിൽ Edit ചെയ്യുക.");
+                return;
+            }
+
+            database.ref('w/' + safeKey).set(weight).then(() => {
+                document.getElementById('setCode').value = '';
+                document.getElementById('setWeight').value = '';
+            });
+        }
+
+        // 2. എഡിറ്റ് ഫങ്ക്ഷൻ (Edit & Update)
+        function updateItem(code, inputId) {
+            const newWeight = document.getElementById(inputId).value.trim();
+            if (newWeight && !isNaN(newWeight)) {
+                const safeKey = code.replace(/\./g, '_');
+                database.ref('w/' + safeKey).set(newWeight).then(() => {
+                    alert("Updated successfully!");
+                });
+            } else {
+                alert("Please enter a valid weight!");
+            }
+        }
+
+        function deleteItem(code) {
+            if(confirm("Delete " + code + "?")) {
+                database.ref('w/' + code.replace(/\./g, '_')).remove();
+            }
+        }
+
+        function renderList() {
+            const body = document.getElementById('listBody');
+            body.innerHTML = '';
+            
+            // കോഡുകൾ ക്രമത്തിൽ കാണിക്കാൻ (Sort)
+            const sortedKeys = Object.keys(db).sort();
+
+            sortedKeys.forEach((key, index) => {
+                const displayCode = key.replace(/_/g, '.');
+                const weightValue = db[key];
+                const inputId = `input-${index}`;
+
+                body.innerHTML += `
+                    <tr>
+                        <td style="width: 40%;">${displayCode}</td>
+                        <td style="width: 30%;">
+                            <input type="text" id="${inputId}" value="${weightValue}" class="edit-input">
+                        </td>
+                        <td class="action-btns">
+                            <button class="edit-btn" onclick="updateItem('${displayCode}', '${inputId}')">💾</button>
+                            <button class="del-btn" onclick="deleteItem('${displayCode}')">×</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>

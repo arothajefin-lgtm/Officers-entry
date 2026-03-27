@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <title>Officers Master Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 10px; margin: 0; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .full { grid-column: span 2; }
+        label { font-weight: bold; font-size: 13px; color: #555; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        #saveBtn { background: #007bff; color: white; margin-top: 10px; }
+        #updateBtn { background: #ff9800; color: white; display: none; margin-top: 10px; }
+        #combinedPdfBtn { background: #e91e63; color: white; width: 100%; margin-bottom: 10px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 11px; }
+        th, td { padding: 8px 4px; border: 1px solid #eee; text-align: center; }
+        th { background: #333; color: white; }
+        
+        .log-item { font-size: 12px; padding: 12px 10px; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .shift-A { background-color: #e8f5e9; border-left: 6px solid #2e7d32; }
+        .shift-B { background-color: #e3f2fd; border-left: 6px solid #1565c0; }
+        .shift-C { background-color: #fffde7; border-left: 6px solid #fbc02d; }
+
+        .log-row { display: flex; justify-content: space-between; align-items: center; }
+        .log-id { color: #333; font-weight: bold; font-size: 14px; }
+        .log-qty { background: rgba(255,255,255,0.8); color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; border: 1px solid #ffcdd2; }
+        .log-meta { color: #444; font-size: 11px; margin-top: 6px; line-height: 1.5; }
+        
+        .edit-btn { background: #ffc107; color: black; border: none; padding: 5px; border-radius: 4px; font-weight: bold; }
+        .verified-btn { background: #28a745; color: white; border-radius: 4px; padding: 6px; border:none; width: 100%; font-weight: bold; }
+        .verified-btn.disabled { background: #ccc; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h3 id="formTitle" style="text-align:center; margin:0 0 10px 0;">Stock Entry</h3>
+    <div class="form-grid">
+        <input type="hidden" id="editKey">
+        <input type="hidden" id="originalTotalBackup">
+        
+        <div class="full"><label>Compound Code</label><input type="text" id="code" oninput="this.value = this.value.toUpperCase()"></div>
+        <div class="full"><label>Mixing For (Target Code)</label><input type="text" id="mixingFor" oninput="this.value = this.value.toUpperCase()"></div>
+
+        <div><label>Mixed Date</label><input type="date" id="mixDate"></div>
+        <div><label>Shift</label><select id="shift"><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
+        
+        <div><label>W/A Value</label><div style="display: flex; gap: 4px;"><input type="number" id="waVal"><select id="waUnit" style="width:65px;"><option value="%">%</option><option value="kg">kg</option></select></div></div>
+        
+        <div><label>IPO Selection</label>
+            <select id="ipoType">
+                <option value="Compound">Compound</option>
+                <option value="Rubber">Rubber</option>
+                <option value="Thread">Thread</option>
+                <option value="Tread">Tread</option>
+                <option value="REWORK">REWORK</option>
+            </select>
+        </div>
+
+        <div><label>Total Batches</label><input type="number" id="totalBatches" value="4" step="0.5"></div>
+        <div><label>Skid No</label><select id="skidNum"><script>for(let i=1; i<=30; i++) document.write(`<option value="${i}">${i}</option>`);</script></select></div>
+        
+        <button id="saveBtn" class="full" onclick="saveData()">SAVE STOCK</button>
+        <button id="updateBtn" class="full" onclick="saveData(true)">UPDATE STOCK</button>
+    </div>
+</div>
+
+<div class="card">
+    <button id="combinedPdfBtn" onclick="downloadCombinedPDF()">DOWNLOAD ALL REPORT (PDF)</button>
+</div>
+
+<div class="card" style="overflow-x: auto; padding: 5px;">
+    <h4>Active Stock</h4>
+    <table>
+        <thead><tr><th>Code / Tag</th><th>W/A & IPO</th><th>Left</th><th>Edit</th><th>Action</th></tr></thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h4>Employee Usage Logs</h4>
+    <div id="usageLogs"></div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyB4akOCR4LTOK6HyvnxwMc7SKpbrMzjNC0",
+        authDomain: "compound-workaway.firebaseapp.com",
+        databaseURL: "https://compound-workaway-default-rtdb.firebaseio.com",
+        projectId: "compound-workaway",
+        storageBucket: "compound-workaway.firebasestorage.app",
+        messagingSenderId: "1020479561110",
+        appId: "1:1020479561110:web:f1cb9448e2bcf9184811b7"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    document.getElementById('mixDate').valueAsDate = new Date();
+    
+    let activeStockData = [];
+    let employeeLogData = [];
+
+    function saveData(isUpdate = false) {
+        const code = document.getElementById('code').value.trim();
+        const mixingFor = document.getElementById('mixingFor').value.trim();
+        const waVal = document.getElementById('waVal').value;
+        const wa = waVal + document.getElementById('waUnit').value;
+        const batches = parseFloat(document.getElementById('totalBatches').value);
+        const shift = document.getElementById('shift').value;
+        const skid = document.getElementById('skidNum').value;
+        const ipo = document.getElementById('ipoType').value;
+        
+        if(!code || !waVal) return alert("Fill Code and W/A!");
+        
+        const tag = new Date(document.getElementById('mixDate').value).getDate() + shift;
+        const key = isUpdate ? document.getElementById('editKey').value : (code + "_" + tag + skid);
+
+        db.ref('compounds/' + key).update({
+            code, mixingFor, wa, balance: batches, ipo, skidNo: skid, shift, displayTag: tag,
+            originalTotal: isUpdate ? parseFloat(document.getElementById('originalTotalBackup').value) : batches
+        }).then(() => {
+            alert(isUpdate ? "Updated!" : "Saved!");
+            resetForm();
+        });
+    }
+
+    db.ref('compounds').on('value', (snapshot) => {
+        const data = snapshot.val();
+        const tbody = document.getElementById('tableBody');
+        const logDiv = document.getElementById('usageLogs');
+        tbody.innerHTML = ""; logDiv.innerHTML = ""; 
+        activeStockData = []; employeeLogData = [];
+        
+        if(!data) return;
+
+        let allLogs = [];
+
+        for(let key in data) {
+            const item = data[key];
+            const isFinished = item.balance <= 0;
+
+            if(!isFinished) {
+                activeStockData.push([item.code, `${item.displayTag}-${item.skidNo}`, item.wa, item.ipo, item.mixingFor || 'N/A', item.balance]);
+            }
+
+            tbody.innerHTML += `<tr>
+                <td><b>${item.code}</b><br><small>Dt/Sh/Sk: ${item.displayTag}-${item.skidNo}</small></td>
+                <td>${item.wa} | <b>${item.ipo || 'N/A'}</b><br><small>For: ${item.mixingFor || 'N/A'}</small></td>
+                <td><b>${item.balance}</b></td>
+                <td><button class="edit-btn" onclick="editItem('${key}')">Edit</button></td>
+                <td><button class="verified-btn ${!isFinished ? 'disabled' : ''}" onclick="${isFinished ? `db.ref('compounds/${key}').remove()` : ''}">Verify</button></td>
+            </tr>`;
+
+            if(item.usageHistory) {
+                Object.values(item.usageHistory).forEach(log => {
+                    allLogs.push({ ...log, compoundCode: item.code, mixingFor: item.mixingFor, wa: item.wa, ipo: item.ipo, original: item.originalTotal || item.balance });
+                });
+            }
+        }
+
+        allLogs.sort((a, b) => b.timestamp - a.timestamp).forEach(log => {
+            const leftover = (log.original - log.usedQty).toFixed(1);
+            const statusText = leftover > 0 ? `Left: ${leftover}` : `Left: NL`;
+            const shiftClass = log.shift === 'A' ? 'shift-A' : (log.shift === 'B' ? 'shift-B' : 'shift-C');
+            employeeLogData.push([log.date, log.empID, log.compoundCode, log.mixingFor, log.ipo, log.usedQty, statusText]);
+
+            logDiv.innerHTML += `
+            <div class="log-item ${shiftClass}">
+                <div class="log-row">
+                    <span class="log-id">ID: ${log.empID}</span>
+                    <span class="log-qty">Used ${log.usedQty} | ${statusText}</span>
+                </div>
+                <div class="log-meta">
+                    <b>${log.compoundCode}</b> | <b>IPO: ${log.ipo || 'N/A'} (Mixing For: ${log.mixingFor || 'N/A'})</b><br>
+                    W/A: ${log.wa} | ${log.date} ${log.time} | Shift: ${log.shift}
+                </div>
+            </div>`;
+        });
+    });
+
+    function downloadCombinedPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Title
+        doc.setFontSize(18);
+        doc.text("Production Master Report", 14, 15);
+        doc.setFontSize(10);
+        doc.text("Generated on: " + new Date().toLocaleString(), 14, 22);
+
+        // Part 1: Active Stock
+        doc.setFontSize(14);
+        doc.text("1. Active Stock Status", 14, 32);
+        doc.autoTable({
+            startY: 35,
+            head: [['Code', 'Dt/Sh/Sk', 'W/A', 'IPO', 'Target', 'Bal']],
+            body: activeStockData,
+            theme: 'grid',
+            headStyles: { fillColor: [103, 58, 183] },
+            styles: { fontSize: 8 }
+        });
+
+        // Part 2: Usage History
+        let finalY = doc.lastAutoTable.finalY + 15;
+        doc.setFontSize(14);
+        doc.text("2. Employee Usage Log History", 14, finalY);
+        doc.autoTable({
+            startY: finalY + 3,
+            head: [['Date', 'EmpID', 'Code', 'Target', 'IPO', 'Used', 'Status']],
+            body: employeeLogData,
+            theme: 'grid',
+            headStyles: { fillColor: [233, 30, 99] },
+            styles: { fontSize: 8 }
+        });
+
+        doc.save("Full_Production_Report.pdf");
+    }
+
+    function editItem(key) {
+        db.ref('compounds/' + key).once('value', (snap) => {
+            const d = snap.val();
+            document.getElementById('code').value = d.code;
+            document.getElementById('mixingFor').value = d.mixingFor || "";
+            document.getElementById('waVal').value = parseFloat(d.wa);
+            document.getElementById('ipoType').value = d.ipo || "Compound";
+            document.getElementById('totalBatches').value = d.balance;
+            document.getElementById('skidNo').value = d.skidNo;
+            document.getElementById('shift').value = d.shift;
+            document.getElementById('editKey').value = key;
+            document.getElementById('originalTotalBackup').value = d.originalTotal || d.balance;
+            document.getElementById('saveBtn').style.display = "none";
+            document.getElementById('updateBtn').style.display = "block";
+            document.getElementById('formTitle').innerText = "Edit Stock";
+            window.scrollTo(0,0);
+        });
+    }
+
+    function resetForm() {
+        document.getElementById('code').value = "";
+        document.getElementById('mixingFor').value = "";
+        document.getElementById('waVal').value = "";
+        document.getElementById('editKey').value = "";
+        document.getElementById('saveBtn').style.display = "block";
+        document.getElementById('updateBtn').style.display = "none";
+        document.getElementById('formTitle').innerText = "Stock Entry";
+    }
+</script>
+</body>
+</html>
