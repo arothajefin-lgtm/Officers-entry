@@ -11,37 +11,29 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 10px; margin: 0; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        
         #openStockBtn { background: #007bff; color: white; width: 100%; padding: 15px; font-size: 16px; margin-bottom: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         #combinedPdfBtn { background: #e91e63; color: white; width: 100%; margin-bottom: 10px; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
         .modal-content { background: white; margin: 10% auto; padding: 20px; border-radius: 12px; width: 90%; max-width: 450px; position: relative; }
         .close-btn { position: absolute; right: 15px; top: 10px; font-size: 24px; cursor: pointer; color: #666; }
-
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .full { grid-column: span 2; }
         label { font-weight: bold; font-size: 13px; color: #555; }
         input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
-        
         button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; }
         #saveBtn { background: #007bff; color: white; margin-top: 10px; }
         #updateBtn { background: #ff9800; color: white; display: none; margin-top: 10px; }
-        
         table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 11px; }
         th, td { padding: 8px 4px; border: 1px solid #eee; text-align: center; }
         th { background: #333; color: white; }
-        
         .log-item { font-size: 12px; padding: 12px 10px; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .shift-A { background-color: #e8f5e9; border-left: 6px solid #2e7d32; }
         .shift-B { background-color: #e3f2fd; border-left: 6px solid #1565c0; }
         .shift-C { background-color: #fffde7; border-left: 6px solid #fbc02d; }
-
         .log-row { display: flex; justify-content: space-between; align-items: center; }
         .log-id { color: #333; font-weight: bold; font-size: 14px; }
         .log-qty { background: rgba(255,255,255,0.8); color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; border: 1px solid #ffcdd2; }
         .log-meta { color: #444; font-size: 11px; margin-top: 6px; line-height: 1.5; }
-        
         .edit-btn { background: #ffc107; color: black; border: none; padding: 5px; border-radius: 4px; font-weight: bold; }
         .verified-btn { background: #28a745; color: white; border-radius: 4px; padding: 6px; border:none; width: 100%; font-weight: bold; }
         .verified-btn.disabled { background: #ccc; cursor: not-allowed; }
@@ -69,6 +61,9 @@
             <div><label>IPO Selection</label><select id="ipoType"><option value="Compound">Compound</option><option value="Rubber">Rubber</option><option value="Thread">Thread</option><option value="Tread">Tread</option><option value="REWORK">REWORK</option></select></div>
             <div><label>Total Batches</label><input type="number" id="totalBatches" value="4" step="0.5"></div>
             <div><label>Skid No</label><select id="skidNum"><script>for(let i=1; i<=30; i++) document.write(`<option value="${i}">${i}</option>`);</script></select></div>
+            
+            <div class="full"><label>Location</label><input type="text" id="location" placeholder="Enter Location"></div>
+            
             <button id="saveBtn" class="full" onclick="saveData()">SAVE STOCK</button>
             <button id="updateBtn" class="full" onclick="saveData(true)">UPDATE STOCK</button>
         </div>
@@ -78,7 +73,7 @@
 <div class="card" style="overflow-x: auto; padding: 5px;">
     <h4>Active Stock</h4>
     <table>
-        <thead><tr><th>Code / Tag</th><th>W/A & IPO</th><th>Left</th><th>Edit</th><th>Action</th></tr></thead>
+        <thead><tr><th>Code / Tag</th><th>W/A & IPO</th><th>Loc & Left</th><th>Edit</th><th>Action</th></tr></thead>
         <tbody id="tableBody"></tbody>
     </table>
 </div>
@@ -118,12 +113,17 @@
         const batches = parseFloat(document.getElementById('totalBatches').value);
         const shift = document.getElementById('shift').value;
         const skid = document.getElementById('skidNum').value;
+        const location = document.getElementById('location').value.trim() || 'N/A';
         const ipo = document.getElementById('ipoType').value;
+
         if(!code || !waVal) return alert("Fill Code and W/A!");
+        
         const tag = new Date(document.getElementById('mixDate').value).getDate() + shift;
         const key = isUpdate ? document.getElementById('editKey').value : (code + "_" + tag + skid);
+
         db.ref('compounds/' + key).update({
             code, mixingFor, wa, balance: batches, ipo, skidNo: skid, shift, displayTag: tag,
+            location,
             originalTotal: isUpdate ? parseFloat(document.getElementById('originalTotalBackup').value) : batches
         }).then(() => {
             alert(isUpdate ? "Updated!" : "Saved!");
@@ -143,21 +143,33 @@
         for(let key in data) {
             const item = data[key];
             const isFinished = item.balance <= 0;
-            if(!isFinished) activeStockData.push([item.code, `${item.displayTag}-${item.skidNo}`, item.wa, item.ipo, item.mixingFor || 'N/A', item.balance + " Batch"]);
+            const fullTag = `${item.displayTag}-${item.skidNo}`;
             
-            tbody.innerHTML += `<tr><td><b>${item.code}</b><br><small>${item.displayTag}-${item.skidNo}</small></td>
-                <td>${item.wa} | <b>${item.ipo}</b></td><td><b>${item.balance} Batch</b></td>
+            if(!isFinished) activeStockData.push([item.code, fullTag, item.wa, item.ipo, item.location || 'N/A', item.balance + " Batch"]);
+            
+            tbody.innerHTML += `<tr>
+                <td><b>${item.code}</b><br><small>${fullTag}</small></td>
+                <td>${item.wa} | <b>${item.ipo}</b></td>
+                <td><b>${item.location || 'N/A'}</b><br>${item.balance} Batch</td>
                 <td><button class="edit-btn" onclick="editItem('${key}')">Edit</button></td>
                 <td><button class="verified-btn ${!isFinished ? 'disabled' : ''}" onclick="${isFinished ? `db.ref('compounds/${key}').remove()` : ''}">Verify</button></td></tr>`;
 
             if(item.usageHistory) {
                 let usageArray = Object.values(item.usageHistory).sort((a,b) => a.timestamp - b.timestamp);
-                // ഫസ്റ്റ് ലോജിക്: ഒറിജിനൽ ബാച്ചിൽ നിന്ന് ഓരോന്നായി കുറച്ചു കാണിക്കുന്നു
                 let currentRunningBal = parseFloat(item.originalTotal) || (usageArray[0] ? (parseFloat(usageArray[0].balance) + parseFloat(usageArray[0].usedQty)) : 0);
                 
                 usageArray.forEach(log => {
                     currentRunningBal = (currentRunningBal - parseFloat(log.usedQty)).toFixed(1);
-                    allLogs.push({ ...log, compoundCode: item.code, mixingFor: item.mixingFor, wa: item.wa, ipo: item.ipo, calculatedLeft: currentRunningBal });
+                    allLogs.push({ 
+                        ...log, 
+                        compoundCode: item.code, 
+                        fullTag: fullTag, // Tag & Skid ചേർത്തു
+                        mixingFor: item.mixingFor, 
+                        wa: item.wa, 
+                        ipo: item.ipo, 
+                        location: item.location, 
+                        calculatedLeft: currentRunningBal 
+                    });
                 });
             }
         }
@@ -165,9 +177,18 @@
         allLogs.sort((a, b) => b.timestamp - a.timestamp).forEach(log => {
             const statusText = parseFloat(log.calculatedLeft) > 0 ? `Left: ${log.calculatedLeft} Batch` : `Left: NL`;
             const shiftClass = log.shift === 'A' ? 'shift-A' : (log.shift === 'B' ? 'shift-B' : 'shift-C');
-            employeeLogData.push([log.date, log.empID, log.compoundCode, log.mixingFor, log.ipo, log.usedQty + " Batch", statusText]);
-            logDiv.innerHTML += `<div class="log-item ${shiftClass}"><div class="log-row"><span class="log-id">ID: ${log.empID}</span><span class="log-qty">Used ${log.usedQty} Batch | ${statusText}</span></div>
-                <div class="log-meta"><b>${log.compoundCode}</b> | IPO: ${log.ipo}<br>W/A: ${log.wa} | ${log.date} ${log.time} | Shift: ${log.shift}</div></div>`;
+            employeeLogData.push([log.date, log.empID, `${log.compoundCode} (${log.fullTag})`, log.mixingFor, log.ipo, log.usedQty + " Batch", statusText]);
+            
+            logDiv.innerHTML += `<div class="log-item ${shiftClass}">
+                <div class="log-row">
+                    <span class="log-id">ID: ${log.empID}</span>
+                    <span class="log-qty">Used ${log.usedQty} Batch | ${statusText}</span>
+                </div>
+                <div class="log-meta">
+                    <b>${log.compoundCode} (${log.fullTag})</b> | Loc: ${log.location || 'N/A'}<br>
+                    W/A: ${log.wa} | ${log.date} ${log.time}
+                </div>
+            </div>`;
         });
     });
 
@@ -175,8 +196,8 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         doc.text("Production Report", 14, 15);
-        doc.autoTable({ startY: 25, head: [['Code', 'Tag', 'W/A', 'IPO', 'Target', 'Bal']], body: activeStockData });
-        doc.autoTable({ startY: doc.lastAutoTable.finalY + 10, head: [['Date', 'ID', 'Code', 'Target', 'IPO', 'Used', 'Status']], body: employeeLogData });
+        doc.autoTable({ startY: 25, head: [['Code', 'Tag', 'W/A', 'IPO', 'Location', 'Bal']], body: activeStockData });
+        doc.autoTable({ startY: doc.lastAutoTable.finalY + 10, head: [['Date', 'EmpID', 'Code (Tag)', 'Target', 'IPO', 'Used', 'Status']], body: employeeLogData });
         doc.save("Production_Report.pdf");
     }
 
@@ -190,6 +211,7 @@
             document.getElementById('totalBatches').value = d.balance;
             document.getElementById('skidNum').value = d.skidNo;
             document.getElementById('shift').value = d.shift;
+            document.getElementById('location').value = d.location || "";
             document.getElementById('editKey').value = key;
             document.getElementById('originalTotalBackup').value = d.originalTotal || d.balance;
             document.getElementById('saveBtn').style.display = "none";
@@ -201,6 +223,7 @@
     function resetForm() {
         document.getElementById('code').value = ""; document.getElementById('mixingFor').value = "";
         document.getElementById('waVal').value = ""; document.getElementById('editKey').value = "";
+        document.getElementById('location').value = "";
         document.getElementById('saveBtn').style.display = "block"; document.getElementById('updateBtn').style.display = "none";
     }
 </script>
