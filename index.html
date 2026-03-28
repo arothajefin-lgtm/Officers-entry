@@ -9,7 +9,6 @@
     
     <style>
         body { 
-            /* ചിത്രത്തിന്റെ പശ്ചാത്തലം പോലെ വെള്ളയാക്കി */
             background: #ffffff; 
             font-family: 'Poppins', sans-serif; 
             display: flex; 
@@ -29,31 +28,29 @@
             width: 100%;
         }
 
-        /* നിങ്ങൾ നൽകിയ അപ്പോളോ ലോഗോ ഇമേജ് */
+        /* GitHub-ൽ അപ്‌ലോഡ് ചെയ്യുന്ന atl.png ഇമേജ് */
         .apollo-logo {
             width: 100%;
             height: auto;
-            max-width: 250px;
-            margin-bottom: 30px;
+            max-width: 280px;
+            margin-bottom: 20px;
         }
 
-        /* ഹെഡിംഗിനും ലോഗോയിലെ പർപ്പിൾ നിറം നൽകി */
         h1 { 
-            color: #5d2d91; /* ലോഗോയിലെ ഡാർക്ക് പർപ്പിൾ */
-            font-size: 32px; 
+            color: #5d2d91; 
+            font-size: 28px; 
             font-weight: 800;
             margin: 0;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        /* ബട്ടണുകൾ മൊത്തത്തിൽ പൊതിഞ്ഞിരിക്കുന്ന ഭാഗം */
         .button-group {
             width: 100%;
             max-width: 350px;
-            display: flex;
+            display: flex; 
             flex-direction: column;
-            gap: 15px; /* ബട്ടണുകൾക്കിടയിലെ വിടവ് */
+            gap: 15px;
         }
 
         .btn { 
@@ -75,7 +72,7 @@
             box-sizing: border-box;
         }
         
-        /* WAX WEIGHT ബട്ടൺ - ലോഗോയിലെ പർപ്പിൾ */
+        /* WAX WEIGHT - Purple */
         .wax { 
             background: #5d2d91; 
             color: white; 
@@ -83,12 +80,12 @@
         }
         
         .wax:hover {
-            background: #4a2475; /* ഹോവർ ചെയ്യുമ്പോൾ കടും പർപ്പിൾ */
+            background: #4a2475;
             transform: translateY(-3px);
             box-shadow: 0 12px 20px rgba(93, 45, 145, 0.3);
         }
 
-        /* W/A DATA ബട്ടൺ - ലോഗോയിലെ ഓറഞ്ച് */
+        /* W/A DATA - Orange */
         .wa { 
             background: #f15a24; 
             color: white; 
@@ -96,40 +93,32 @@
         }
 
         .wa:hover {
-            background: #d44c1d; /* ഹോവർ ചെയ്യുമ്പോൾ കടും ഓറഞ്ച് */
+            background: #d44c1d;
             transform: translateY(-3px);
             box-shadow: 0 12px 20px rgba(241, 90, 36, 0.3);
         }
 
-        .btn:active { 
-            transform: scale(0.96); 
-        }
+        .btn:active { transform: scale(0.96); }
 
-        /* 'go the distance' വരി താഴെ ചേർക്കാൻ */
         .tagline {
-            margin-top: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin-top: 40px;
             font-size: 14px;
-            color: #f15a24; /* ഓറഞ്ച് നിറം */
+            color: #f15a24; 
             font-weight: 600;
-            text-transform: lowercase;
             font-style: italic;
         }
 
-        .developed {
+        .footer {
             color: #94a3b8; 
             font-size: 12px; 
             margin-top: 15px;
-            font-weight: 500;
         }
     </style>
 </head>
 <body>
 
     <div class="header-container">
-        <img src="apollo.png" alt="Apollo Logo" class="apollo-logo">
+        <img src="atl.png" alt="Apollo Logo" class="apollo-logo">
         <h1>Officers Entry</h1>
     </div>
 
@@ -139,7 +128,7 @@
     </div>
 
     <div class="tagline">go the distance™</div>
-    <div class="developed">Developed by Jefin</div>
+    <div class="footer">Developed by Jefin</div>
 
 </body>
 </html>
