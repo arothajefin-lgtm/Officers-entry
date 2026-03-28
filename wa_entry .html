@@ -9,39 +9,63 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 10px; margin: 0; }
-        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        #openStockBtn { background: #007bff; color: white; width: 100%; padding: 15px; font-size: 16px; margin-bottom: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        #combinedPdfBtn { background: #e91e63; color: white; width: 100%; margin-bottom: 10px; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-        .modal-content { background: white; margin: 10% auto; padding: 20px; border-radius: 12px; width: 90%; max-width: 450px; position: relative; }
-        .close-btn { position: absolute; right: 15px; top: 10px; font-size: 24px; cursor: pointer; color: #666; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        /* Apollo Brand Colors: Purple (#5d2d91), Orange (#f58220) */
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: #f4f4f9; padding: 10px; margin: 0; color: #333; }
+        
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 15px; border-top: 4px solid #5d2d91; }
+        
+        #openStockBtn { background: #5d2d91; color: white; width: 100%; padding: 15px; font-size: 16px; margin-bottom: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        #openStockBtn:hover { background: #4a2475; }
+        
+        #combinedPdfBtn { background: #f58220; color: white; width: 100%; margin-bottom: 10px; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        #combinedPdfBtn:hover { background: #e07210; }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); }
+        .modal-content { background: white; margin: 5% auto; padding: 25px; border-radius: 15px; width: 90%; max-width: 450px; position: relative; border-left: 8px solid #f58220; }
+        .close-btn { position: absolute; right: 15px; top: 10px; font-size: 28px; cursor: pointer; color: #999; }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .full { grid-column: span 2; }
-        label { font-weight: bold; font-size: 13px; color: #555; }
-        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; }
-        #saveBtn { background: #007bff; color: white; margin-top: 10px; }
-        #updateBtn { background: #ff9800; color: white; display: none; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 11px; }
-        th, td { padding: 8px 4px; border: 1px solid #eee; text-align: center; }
-        th { background: #333; color: white; }
-        .log-item { font-size: 12px; padding: 12px 10px; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .shift-A { background-color: #e8f5e9; border-left: 6px solid #2e7d32; }
-        .shift-B { background-color: #e3f2fd; border-left: 6px solid #1565c0; }
-        .shift-C { background-color: #fffde7; border-left: 6px solid #fbc02d; }
+        label { font-weight: bold; font-size: 13px; color: #5d2d91; display: block; margin-bottom: 2px; }
+        
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; }
+        input:focus { border-color: #5d2d91; box-shadow: 0 0 5px rgba(93, 45, 145, 0.2); }
+        
+        #saveBtn { background: #5d2d91; color: white; margin-top: 15px; }
+        #updateBtn { background: #f58220; color: white; display: none; margin-top: 15px; }
+
+        h4 { color: #5d2d91; border-bottom: 2px solid #f58220; display: inline-block; margin-bottom: 15px; padding-bottom: 3px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 11px; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 10px 5px; border-bottom: 1px solid #eee; text-align: center; }
+        th { background: #5d2d91; color: white; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .log-item { font-size: 12px; padding: 12px 10px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-right: 4px solid transparent; }
+        .shift-A { background-color: #f0fdf4; border-left: 6px solid #2e7d32; }
+        .shift-B { background-color: #f0f9ff; border-left: 6px solid #1565c0; }
+        .shift-C { background-color: #fffbeb; border-left: 6px solid #fbc02d; }
+        
         .log-row { display: flex; justify-content: space-between; align-items: center; }
-        .log-id { color: #333; font-weight: bold; font-size: 14px; }
-        .log-qty { background: rgba(255,255,255,0.8); color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; border: 1px solid #ffcdd2; }
-        .log-meta { color: #444; font-size: 11px; margin-top: 6px; line-height: 1.6; }
-        .edit-btn { background: #ffc107; color: black; border: none; padding: 5px; border-radius: 4px; font-weight: bold; }
-        .verified-btn { background: #28a745; color: white; border-radius: 4px; padding: 6px; border:none; width: 100%; font-weight: bold; }
-        .verified-btn.disabled { background: #ccc; cursor: not-allowed; }
+        .log-id { color: #5d2d91; font-weight: bold; font-size: 14px; }
+        .log-qty { background: #f58220; color: white; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; }
+        .log-meta { color: #555; font-size: 11px; margin-top: 8px; line-height: 1.6; }
+        
+        .edit-btn { background: #fff; color: #5d2d91; border: 1px solid #5d2d91; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .edit-btn:hover { background: #5d2d91; color: white; }
+        
+        .verified-btn { background: #28a745; color: white; border-radius: 4px; padding: 8px; border:none; width: 100%; font-weight: bold; cursor: pointer; }
+        .verified-btn.disabled { background: #eee; color: #aaa; cursor: not-allowed; border: 1px solid #ddd; }
+        
+        .logo-container { text-align: center; padding: 10px 0; }
+        .logo-container img { height: 45px; width: auto; }
     </style>
 </head>
 <body>
 
 <div class="card">
+    <div class="logo-container">
+        <img src="atl.png" alt="Apollo Logo">
+    </div>
     <button id="openStockBtn" onclick="toggleModal(true)">ADD NEW STOCK ENTRY</button>
     <button id="combinedPdfBtn" onclick="downloadCombinedPDF()">DOWNLOAD ALL REPORT (PDF)</button>
 </div>
@@ -49,20 +73,20 @@
 <div id="stockModal" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="toggleModal(false)">&times;</span>
-        <h3 id="formTitle" style="text-align:center; margin:0 0 15px 0;">Stock Entry</h3>
+        <h3 id="formTitle" style="text-align:center; margin:0 0 20px 0; color: #5d2d91;">Stock Entry</h3>
         <div class="form-grid">
             <input type="hidden" id="editKey">
             <input type="hidden" id="originalTotalBackup">
-            <div class="full"><label>Compound Code</label><input type="text" id="code" oninput="this.value = this.value.toUpperCase()"></div>
-            <div class="full"><label>Mixing For (Target Code)</label><input type="text" id="mixingFor" oninput="this.value = this.value.toUpperCase()"></div>
+            <div class="full"><label>Compound Code</label><input type="text" id="code" placeholder="e.g. ABC123" oninput="this.value = this.value.toUpperCase()"></div>
+            <div class="full"><label>Mixing For (Target Code)</label><input type="text" id="mixingFor" placeholder="e.g. TGT456" oninput="this.value = this.value.toUpperCase()"></div>
             <div><label>Mixed Date</label><input type="date" id="mixDate"></div>
             <div><label>Shift</label><select id="shift"><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
-            <div><label>W/A Value</label><div style="display: flex; gap: 4px;"><input type="number" id="waVal"><select id="waUnit" style="width:65px;"><option value="%">%</option><option value="kg">kg</option></select></div></div>
+            <div><label>W/A Value</label><div style="display: flex; gap: 4px;"><input type="number" id="waVal" placeholder="0.0"><select id="waUnit" style="width:75px;"><option value="%">%</option><option value="kg">kg</option></select></div></div>
             <div><label>IPO Selection</label><select id="ipoType"><option value="Compound">Compound</option><option value="Rubber">Rubber</option><option value="Thread">Thread</option><option value="Tread">Tread</option><option value="REWORK">REWORK</option></select></div>
             <div><label>Total Batches</label><input type="number" id="totalBatches" value="4" step="0.5"></div>
             <div><label>Skid No</label><select id="skidNum"><script>for(let i=1; i<=30; i++) document.write(`<option value="${i}">${i}</option>`);</script></select></div>
             
-            <div class="full"><label>Location</label><input type="text" id="location" placeholder="Enter Location"></div>
+            <div class="full"><label>Location</label><input type="text" id="location" placeholder="Enter Warehouse Location"></div>
             
             <button id="saveBtn" class="full" onclick="saveData()">SAVE STOCK</button>
             <button id="updateBtn" class="full" onclick="saveData(true)">UPDATE STOCK</button>
@@ -126,7 +150,7 @@
             location,
             originalTotal: isUpdate ? parseFloat(document.getElementById('originalTotalBackup').value) : batches
         }).then(() => {
-            alert(isUpdate ? "Updated!" : "Saved!");
+            alert(isUpdate ? "Updated Successfully!" : "Saved Successfully!");
             toggleModal(false);
         });
     }
@@ -149,11 +173,11 @@
             if(!isFinished) activeStockData.push([item.code, fullTag, item.wa, item.ipo, item.location || 'N/A', item.balance + " Batch"]);
             
             tbody.innerHTML += `<tr>
-                <td><b>${item.code}</b><br><small>${fullTag}</small></td>
+                <td><b style="color:#5d2d91;">${item.code}</b><br><small>${fullTag}</small></td>
                 <td>${item.wa} • <b>${item.ipo}</b><br><small>Mix: ${targetCode}</small></td>
                 <td><b>${item.location || 'N/A'}</b><br>${item.balance} Batch</td>
                 <td><button class="edit-btn" onclick="editItem('${key}')">Edit</button></td>
-                <td><button class="verified-btn ${!isFinished ? 'disabled' : ''}" onclick="${isFinished ? `db.ref('compounds/${key}').remove()` : ''}">Verify</button></td></tr>`;
+                <td><button class="verified-btn ${!isFinished ? 'disabled' : ''}" onclick="${isFinished ? `if(confirm('Verify and Remove?')) db.ref('compounds/${key}').remove()` : ''}">${isFinished ? 'Verify' : 'Active'}</button></td></tr>`;
 
             if(item.usageHistory) {
                 let usageArray = Object.values(item.usageHistory).sort((a,b) => a.timestamp - b.timestamp);
@@ -186,9 +210,9 @@
                     <span class="log-qty">Used ${log.usedQty} Batch • ${statusText}</span>
                 </div>
                 <div class="log-meta">
-                    <b>${log.compoundCode} (${log.fullTag})</b> • Loc: ${log.location || 'N/A'}<br>
+                    <b style="color:#5d2d91;">${log.compoundCode} (${log.fullTag})</b> • Loc: ${log.location || 'N/A'}<br>
                     W/A: ${log.wa} • IPO: ${log.ipo} • Mix With: ${log.mixingFor}<br>
-                    Time: ${log.date} ${log.time}
+                    <small style="color:#888;">Time: ${log.date} ${log.time}</small>
                 </div>
             </div>`;
         });
@@ -197,10 +221,19 @@
     function downloadCombinedPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.text("Production Report", 14, 15);
-        doc.autoTable({ startY: 25, head: [['Date', 'EmpID', 'Code (Tag)', 'Target', 'IPO', 'Used', 'Status']], body: employeeLogData });
-        doc.autoTable({ startY: doc.lastAutoTable.finalY + 10, head: [['Code', 'Tag', 'W/A', 'IPO', 'Location', 'Bal']], body: activeStockData });
-        doc.save("Production_Report.pdf");
+        doc.setTextColor(93, 45, 145);
+        doc.setFontSize(18);
+        doc.text("APOLLO TYRES - Production Report", 14, 15);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text("Usage History Logs", 14, 25);
+        doc.autoTable({ startY: 28, head: [['Date', 'EmpID', 'Code (Tag)', 'Target', 'IPO', 'Used', 'Status']], body: employeeLogData, headStyles: {fillColor: [93, 45, 145]} });
+        
+        doc.text("Active Stock Inventory", 14, doc.lastAutoTable.finalY + 10);
+        doc.autoTable({ startY: doc.lastAutoTable.finalY + 13, head: [['Code', 'Tag', 'W/A', 'IPO', 'Location', 'Bal']], body: activeStockData, headStyles: {fillColor: [245, 130, 32]} });
+        
+        doc.save("Apollo_Production_Report.pdf");
     }
 
     function editItem(key) {
