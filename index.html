@@ -1,18 +1,145 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" class="notranslate">
 <head>
+    <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Officers Entry</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
-        body { background: #2c3e50; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .btn { width: 80%; padding: 20px; margin: 10px; font-size: 20px; font-weight: bold; text-decoration: none; text-align: center; border-radius: 10px; display: block; }
-        .wax { background: #f1c40f; color: #2c3e50; }
-        .wa { background: #3498db; color: white; }
+        body { 
+            /* ചിത്രത്തിന്റെ പശ്ചാത്തലം പോലെ വെള്ളയാക്കി */
+            background: #ffffff; 
+            font-family: 'Poppins', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .header-container {
+            text-align: center;
+            margin-bottom: 40px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        /* നിങ്ങൾ നൽകിയ അപ്പോളോ ലോഗോ ഇമേജ് */
+        .apollo-logo {
+            width: 100%;
+            height: auto;
+            max-width: 250px;
+            margin-bottom: 30px;
+        }
+
+        /* ഹെഡിംഗിനും ലോഗോയിലെ പർപ്പിൾ നിറം നൽകി */
+        h1 { 
+            color: #5d2d91; /* ലോഗോയിലെ ഡാർക്ക് പർപ്പിൾ */
+            font-size: 32px; 
+            font-weight: 800;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ബട്ടണുകൾ മൊത്തത്തിൽ പൊതിഞ്ഞിരിക്കുന്ന ഭാഗം */
+        .button-group {
+            width: 100%;
+            max-width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* ബട്ടണുകൾക്കിടയിലെ വിടവ് */
+        }
+
+        .btn { 
+            width: 100%; 
+            padding: 22px; 
+            font-size: 18px; 
+            font-weight: 700; 
+            border: none; 
+            border-radius: 20px; 
+            cursor: pointer; 
+            text-decoration: none; 
+            text-align: center; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            box-sizing: border-box;
+        }
+        
+        /* WAX WEIGHT ബട്ടൺ - ലോഗോയിലെ പർപ്പിൾ */
+        .wax { 
+            background: #5d2d91; 
+            color: white; 
+            box-shadow: 0 8px 15px rgba(93, 45, 145, 0.2);
+        }
+        
+        .wax:hover {
+            background: #4a2475; /* ഹോവർ ചെയ്യുമ്പോൾ കടും പർപ്പിൾ */
+            transform: translateY(-3px);
+            box-shadow: 0 12px 20px rgba(93, 45, 145, 0.3);
+        }
+
+        /* W/A DATA ബട്ടൺ - ലോഗോയിലെ ഓറഞ്ച് */
+        .wa { 
+            background: #f15a24; 
+            color: white; 
+            box-shadow: 0 8px 15px rgba(241, 90, 36, 0.2);
+        }
+
+        .wa:hover {
+            background: #d44c1d; /* ഹോവർ ചെയ്യുമ്പോൾ കടും ഓറഞ്ച് */
+            transform: translateY(-3px);
+            box-shadow: 0 12px 20px rgba(241, 90, 36, 0.3);
+        }
+
+        .btn:active { 
+            transform: scale(0.96); 
+        }
+
+        /* 'go the distance' വരി താഴെ ചേർക്കാൻ */
+        .tagline {
+            margin-top: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #f15a24; /* ഓറഞ്ച് നിറം */
+            font-weight: 600;
+            text-transform: lowercase;
+            font-style: italic;
+        }
+
+        .developed {
+            color: #94a3b8; 
+            font-size: 12px; 
+            margin-top: 15px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
-    <h1 style="color:white">Officers Entry</h1>
-    <a href="wax_entry.html" class="btn wax">WAX WEIGHT</a>
-    <a href="wa_entry .html" class="btn wa">W/A DATA</a>
+
+    <div class="header-container">
+        <img src="apollo.png" alt="Apollo Logo" class="apollo-logo">
+        <h1>Officers Entry</h1>
+    </div>
+
+    <div class="button-group">
+        <a href="wax_entry.html" class="btn wax">WAX WEIGHT</a>
+        <a href="wa_entry .html" class="btn wa">W/A DATA</a>
+    </div>
+
+    <div class="tagline">go the distance™</div>
+    <div class="developed">Developed by Jefin</div>
+
 </body>
 </html>
