@@ -6,6 +6,8 @@
     <title>Manage - Compound Wax</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
         body { font-family: -apple-system, sans-serif; background-color: #f4f7f6; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 92%; max-width: 500px; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
@@ -70,15 +72,24 @@
             const weight = document.getElementById('setWeight').value.trim();
             
             if (!codeInput || !weight) {
-                alert("Please enter both code and weight!");
+                Swal.fire({
+                    title: 'ശ്രദ്ധിക്കുക!',
+                    text: 'ദയവായി കോഡും തൂക്കവും നൽകുക!',
+                    icon: 'warning',
+                    confirmButtonText: 'ശരി'
+                });
                 return;
             }
 
             const safeKey = codeInput.replace(/\./g, '_');
 
-            // 1. ആവർത്തനം ഒഴിവാക്കാനുള്ള ചെക്കിംഗ് (Duplicate Check)
             if (db[safeKey]) {
-                alert("ഈ കോഡ് നിലവിലുണ്ട്! മാറ്റം വരുത്തണമെങ്കിൽ താഴെയുള്ള ലിസ്റ്റിൽ Edit ചെയ്യുക.");
+                Swal.fire({
+                    title: 'വിവരം നിലവിലുണ്ട്',
+                    text: 'ഈ കോഡ് നിലവിലുണ്ട്! മാറ്റം വരുത്തണമെങ്കിൽ താഴെയുള്ള ലിസ്റ്റിൽ Edit ചെയ്യുക.',
+                    icon: 'info',
+                    confirmButtonText: 'ശരി'
+                });
                 return;
             }
 
@@ -88,30 +99,50 @@
             });
         }
 
-        // 2. എഡിറ്റ് ഫങ്ക്ഷൻ (Edit & Update)
         function updateItem(code, inputId) {
             const newWeight = document.getElementById(inputId).value.trim();
             if (newWeight && !isNaN(newWeight)) {
                 const safeKey = code.replace(/\./g, '_');
                 database.ref('w/' + safeKey).set(newWeight).then(() => {
-                    alert("Updated successfully!");
+                    Swal.fire({
+                        title: 'വിജയിച്ചു!',
+                        text: 'വിവരങ്ങൾ അപ്ഡേറ്റ് ചെയ്തു.',
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
                 });
             } else {
-                alert("Please enter a valid weight!");
+                Swal.fire({
+                    title: 'തെറ്റായ വിവരം',
+                    text: 'ദയവായി ശരിയായ തൂക്കം നൽകുക!',
+                    icon: 'error',
+                    confirmButtonText: 'ശരി'
+                });
             }
         }
 
         function deleteItem(code) {
-            if(confirm("Delete " + code + "?")) {
-                database.ref('w/' + code.replace(/\./g, '_')).remove();
-            }
+            Swal.fire({
+                title: 'ഡിലീറ്റ് ചെയ്യണോ?',
+                text: code + " ഒഴിവാക്കാൻ ആഗ്രഹിക്കുന്നുണ്ടോ?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e74c3c',
+                cancelButtonColor: '#7f8c8d',
+                confirmButtonText: 'അതെ',
+                cancelButtonText: 'വേണ്ട'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    database.ref('w/' + code.replace(/\./g, '_')).remove();
+                    Swal.fire('ഒഴിവാക്കി!', code + ' ഡിലീറ്റ് ചെയ്തു.', 'success');
+                }
+            });
         }
 
         function renderList() {
             const body = document.getElementById('listBody');
             body.innerHTML = '';
-            
-            // കോഡുകൾ ക്രമത്തിൽ കാണിക്കാൻ (Sort)
             const sortedKeys = Object.keys(db).sort();
 
             sortedKeys.forEach((key, index) => {
