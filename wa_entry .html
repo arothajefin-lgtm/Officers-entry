@@ -33,7 +33,7 @@
         .log-row { display: flex; justify-content: space-between; align-items: center; }
         .log-id { color: #333; font-weight: bold; font-size: 14px; }
         .log-qty { background: rgba(255,255,255,0.8); color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; border: 1px solid #ffcdd2; }
-        .log-meta { color: #444; font-size: 11px; margin-top: 6px; line-height: 1.5; }
+        .log-meta { color: #444; font-size: 11px; margin-top: 6px; line-height: 1.6; }
         .edit-btn { background: #ffc107; color: black; border: none; padding: 5px; border-radius: 4px; font-weight: bold; }
         .verified-btn { background: #28a745; color: white; border-radius: 4px; padding: 6px; border:none; width: 100%; font-weight: bold; }
         .verified-btn.disabled { background: #ccc; cursor: not-allowed; }
@@ -144,12 +144,13 @@
             const item = data[key];
             const isFinished = item.balance <= 0;
             const fullTag = `${item.displayTag}-${item.skidNo}`;
+            const targetCode = item.mixingFor || 'N/A';
             
             if(!isFinished) activeStockData.push([item.code, fullTag, item.wa, item.ipo, item.location || 'N/A', item.balance + " Batch"]);
             
             tbody.innerHTML += `<tr>
                 <td><b>${item.code}</b><br><small>${fullTag}</small></td>
-                <td>${item.wa} | <b>${item.ipo}</b></td>
+                <td>${item.wa} • <b>${item.ipo}</b><br><small>Mix: ${targetCode}</small></td>
                 <td><b>${item.location || 'N/A'}</b><br>${item.balance} Batch</td>
                 <td><button class="edit-btn" onclick="editItem('${key}')">Edit</button></td>
                 <td><button class="verified-btn ${!isFinished ? 'disabled' : ''}" onclick="${isFinished ? `db.ref('compounds/${key}').remove()` : ''}">Verify</button></td></tr>`;
@@ -163,10 +164,10 @@
                     allLogs.push({ 
                         ...log, 
                         compoundCode: item.code, 
-                        fullTag: fullTag, // Tag & Skid ചേർത്തു
-                        mixingFor: item.mixingFor, 
+                        fullTag: fullTag, 
+                        mixingFor: targetCode, 
                         wa: item.wa, 
-                        ipo: item.ipo, 
+                        ipo: item.ipo || 'N/A', 
                         location: item.location, 
                         calculatedLeft: currentRunningBal 
                     });
@@ -181,12 +182,13 @@
             
             logDiv.innerHTML += `<div class="log-item ${shiftClass}">
                 <div class="log-row">
-                    <span class="log-id">ID: ${log.empID}</span>
-                    <span class="log-qty">Used ${log.usedQty} Batch | ${statusText}</span>
+                    <span class="log-id">EMP.ID: ${log.empID}</span>
+                    <span class="log-qty">Used ${log.usedQty} Batch • ${statusText}</span>
                 </div>
                 <div class="log-meta">
-                    <b>${log.compoundCode} (${log.fullTag})</b> | Loc: ${log.location || 'N/A'}<br>
-                    W/A: ${log.wa} | ${log.date} ${log.time}
+                    <b>${log.compoundCode} (${log.fullTag})</b> • Loc: ${log.location || 'N/A'}<br>
+                    W/A: ${log.wa} • IPO: ${log.ipo} • Mix With: ${log.mixingFor}<br>
+                    Time: ${log.date} ${log.time}
                 </div>
             </div>`;
         });
@@ -196,8 +198,8 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         doc.text("Production Report", 14, 15);
-        doc.autoTable({ startY: 25, head: [['Code', 'Tag', 'W/A', 'IPO', 'Location', 'Bal']], body: activeStockData });
-        doc.autoTable({ startY: doc.lastAutoTable.finalY + 10, head: [['Date', 'EmpID', 'Code (Tag)', 'Target', 'IPO', 'Used', 'Status']], body: employeeLogData });
+        doc.autoTable({ startY: 25, head: [['Date', 'EmpID', 'Code (Tag)', 'Target', 'IPO', 'Used', 'Status']], body: employeeLogData });
+        doc.autoTable({ startY: doc.lastAutoTable.finalY + 10, head: [['Code', 'Tag', 'W/A', 'IPO', 'Location', 'Bal']], body: activeStockData });
         doc.save("Production_Report.pdf");
     }
 
