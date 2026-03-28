@@ -9,38 +9,75 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        body { font-family: -apple-system, sans-serif; background-color: #f4f7f6; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { width: 92%; max-width: 500px; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
-        .input-group { position: relative; margin-bottom: 12px; }
-        .input-box { width: 100%; padding: 14px 15px 14px 45px; font-size: 16px; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; text-transform: uppercase; font-weight: 600; }
-        .input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #7f8c8d; }
-        .btn { padding: 12px; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; width: 100%; margin-top: 10px; transition: 0.3s; }
-        .save-btn { background-color: #27ae60; }
-        .save-btn:hover { background-color: #219150; }
-        .table-container { margin-top: 20px; width: 100%; max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; }
-        td { border-bottom: 1px solid #eee; padding: 12px; font-size: 14px; font-weight: 600; color: #2c3e50; }
-        .edit-input { width: 80px; padding: 6px; border-radius: 6px; border: 1px solid #3498db; text-align: center; font-weight: bold; }
-        .action-btns { display: flex; gap: 8px; justify-content: flex-end; }
-        .edit-btn { background: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
-        .del-btn { background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+        /* Apollo Brand Colors: Purple (#5d2d91), Orange (#f58220) */
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f9; padding: 20px; display: flex; flex-direction: column; align-items: center; color: #333; }
+        
+        .container { width: 92%; max-width: 500px; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); border-top: 5px solid #5d2d91; }
+        
+        .logo-container { text-align: center; margin-bottom: 20px; }
+        .logo-container img { height: 40px; width: auto; }
+
+        h3 { text-align: center; color: #5d2d91; margin-bottom: 25px; font-weight: 700; border-bottom: 2px solid #f58220; display: inline-block; width: 100%; padding-bottom: 10px; }
+
+        .input-group { position: relative; margin-bottom: 15px; }
+        .input-box { width: 100%; padding: 14px 15px 14px 45px; font-size: 16px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; text-transform: uppercase; font-weight: 600; transition: 0.3s; outline: none; }
+        .input-box:focus { border-color: #5d2d91; box-shadow: 0 0 8px rgba(93, 45, 145, 0.15); }
+        
+        .input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 18px; }
+        
+        .btn { padding: 14px; color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 700; width: 100%; margin-top: 10px; transition: 0.3s; font-size: 16px; }
+        .save-btn { background-color: #5d2d91; }
+        .save-btn:hover { background-color: #4a2475; transform: translateY(-2px); }
+
+        .table-container { margin-top: 25px; width: 100%; max-height: 400px; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        
+        thead { position: sticky; top: 0; background: #5d2d91; color: white; }
+        th { padding: 12px; font-size: 13px; text-transform: uppercase; }
+
+        td { border-bottom: 1px solid #f9f9f9; padding: 12px; font-size: 15px; font-weight: 600; color: #2c3e50; text-align: center; }
+        
+        .edit-input { width: 85%; padding: 8px; border-radius: 8px; border: 1px solid #ddd; text-align: center; font-weight: bold; color: #f58220; outline: none; }
+        .edit-input:focus { border-color: #f58220; }
+
+        .action-btns { display: flex; gap: 8px; justify-content: center; }
+        .edit-btn { background: #f58220; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .edit-btn:hover { background: #e07210; }
+        
+        .del-btn { background: #fff; color: #e74c3c; border: 1px solid #ffcfcf; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .del-btn:hover { background: #ffebeb; }
+
+        /* Custom Scrollbar */
+        .table-container::-webkit-scrollbar { width: 6px; }
+        .table-container::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h3 style="text-align: center; margin-top: 0;">Manage Data</h3>
+        <div class="logo-container">
+            <img src="atl.png" alt="Apollo Logo">
+        </div>
+        <h3>Manage Wax Data</h3>
+        
         <div class="input-group">
             <span class="input-icon">🔖</span>
             <input type="text" id="setCode" class="input-box" placeholder="Compound Code">
         </div>
         <div class="input-group">
             <span class="input-icon">⚖️</span>
-            <input type="text" id="setWeight" class="input-box" placeholder="Weight (0.00)">
+            <input type="number" id="setWeight" class="input-box" placeholder="Weight (0.00)" step="0.01">
         </div>
         <button class="btn save-btn" onclick="saveData()">+ Add New Compound</button>
 
         <div class="table-container">
             <table>
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Weight</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
                 <tbody id="listBody"></tbody>
             </table>
         </div>
@@ -76,7 +113,7 @@
                     title: 'ശ്രദ്ധിക്കുക!',
                     text: 'ദയവായി കോഡും തൂക്കവും നൽകുക!',
                     icon: 'warning',
-                    confirmButtonText: 'ശരി'
+                    confirmButtonColor: '#5d2d91'
                 });
                 return;
             }
@@ -88,7 +125,7 @@
                     title: 'വിവരം നിലവിലുണ്ട്',
                     text: 'ഈ കോഡ് നിലവിലുണ്ട്! മാറ്റം വരുത്തണമെങ്കിൽ താഴെയുള്ള ലിസ്റ്റിൽ Edit ചെയ്യുക.',
                     icon: 'info',
-                    confirmButtonText: 'ശരി'
+                    confirmButtonColor: '#5d2d91'
                 });
                 return;
             }
@@ -96,6 +133,14 @@
             database.ref('w/' + safeKey).set(weight).then(() => {
                 document.getElementById('setCode').value = '';
                 document.getElementById('setWeight').value = '';
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'സേവ് ചെയ്തു!',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
             });
         }
 
@@ -105,8 +150,7 @@
                 const safeKey = code.replace(/\./g, '_');
                 database.ref('w/' + safeKey).set(newWeight).then(() => {
                     Swal.fire({
-                        title: 'വിജയിച്ചു!',
-                        text: 'വിവരങ്ങൾ അപ്ഡേറ്റ് ചെയ്തു.',
+                        title: 'അപ്ഡേറ്റ് ചെയ്തു!',
                         icon: 'success',
                         timer: 1500,
                         showConfirmButton: false
@@ -116,8 +160,7 @@
                 Swal.fire({
                     title: 'തെറ്റായ വിവരം',
                     text: 'ദയവായി ശരിയായ തൂക്കം നൽകുക!',
-                    icon: 'error',
-                    confirmButtonText: 'ശരി'
+                    icon: 'error'
                 });
             }
         }
@@ -128,8 +171,8 @@
                 text: code + " ഒഴിവാക്കാൻ ആഗ്രഹിക്കുന്നുണ്ടോ?",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#e74c3c',
-                cancelButtonColor: '#7f8c8d',
+                confirmButtonColor: '#5d2d91',
+                cancelButtonColor: '#f58220',
                 confirmButtonText: 'അതെ',
                 cancelButtonText: 'വേണ്ട'
             }).then((result) => {
@@ -152,13 +195,13 @@
 
                 body.innerHTML += `
                     <tr>
-                        <td style="width: 40%;">${displayCode}</td>
+                        <td style="width: 40%; color: #5d2d91;">${displayCode}</td>
                         <td style="width: 30%;">
                             <input type="text" id="${inputId}" value="${weightValue}" class="edit-input">
                         </td>
                         <td class="action-btns">
-                            <button class="edit-btn" onclick="updateItem('${displayCode}', '${inputId}')">💾</button>
-                            <button class="del-btn" onclick="deleteItem('${displayCode}')">×</button>
+                            <button class="edit-btn" onclick="updateItem('${displayCode}', '${inputId}')" title="Update">💾</button>
+                            <button class="del-btn" onclick="deleteItem('${displayCode}')" title="Delete">×</button>
                         </td>
                     </tr>
                 `;
