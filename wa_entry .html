@@ -223,7 +223,7 @@
         const doc = new jsPDF();
         doc.setTextColor(93, 45, 145);
         doc.setFontSize(18);
-        doc.text("APOLLO TYRES - Production Report", 14, 15);
+        doc.text("APOLLO TYRES - workaway Report", 14, 15);
         
         doc.setFontSize(10);
         doc.setTextColor(100);
@@ -233,7 +233,7 @@
         doc.text("Active Stock Inventory", 14, doc.lastAutoTable.finalY + 10);
         doc.autoTable({ startY: doc.lastAutoTable.finalY + 13, head: [['Code', 'Tag', 'W/A', 'IPO', 'Location', 'Bal']], body: activeStockData, headStyles: {fillColor: [245, 130, 32]} });
         
-        doc.save("Apollo_Production_Report.pdf");
+        doc.save("Apollo_workaway_Report.pdf");
     }
 
     function editItem(key) {
