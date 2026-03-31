@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notice Entry - Firebase Sync</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; padding: 15px; display: flex; flex-direction: column; align-items: center; user-select: none; }
+        .input-section { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 25px; width: 100%; max-width: 500px; }
+        .form-group { margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .row-flex { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+        label { font-weight: bold; font-size: 13px; color: #444; }
+        input[type="text"], input[type="date"], select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        
+        .btn-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; min-width: 120px; transition: 0.3s; }
+        
+        .preview-btn { background: #007bff; }
+        .save-btn { background: #28a745; }
+        .print-btn { background: #333; }
+
+        .notice-entry { width: 100%; max-width: 500px; margin-top: 25px; position: relative; }
+        .mini-delete { position: absolute; top: -10px; right: -5px; background: #ff4d4d; color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; font-weight: bold; z-index: 5; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+
+        .notice-card { width: 100%; border: 2px solid #000; background: #fff; box-sizing: border-box; }
+        .header { text-align: center; font-size: 26px; font-weight: bold; border-bottom: 2px solid #000; padding: 10px; letter-spacing: 2px; }
+        .sub-header { display: flex; border-bottom: 2px solid #000; font-size: 14px; }
+        .banbury { border-right: 2px solid #000; flex: 1; padding: 5px 10px; font-weight: bold; }
+        .date-section { flex: 1; text-align: right; padding: 5px 10px; font-weight: bold; }
+        .content { padding: 25px; min-height: 120px; }
+        .msg-line { font-size: 20px; line-height: 1.8; margin-bottom: 12px; color: #000; }
+        .bold { font-weight: bold; }
+
+        @media print {
+            .input-section, .btn-group, .mini-delete, .history-title { display: none !important; }
+            body { padding: 0; background: white; }
+            .notice-entry { margin-top: 15px; page-break-after: always; }
+            .notice-card { border: 2px solid #000; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="input-section">
+    <div class="form-group">
+        <label>Main Code (eg: XMT544)</label>
+        <input type="text" id="in-main-code" placeholder="Enter Code" oninput="this.value = this.value.toUpperCase()">
+    </div>
+
+    <div class="form-group">
+        <label>Date & Shift</label>
+        <div class="row-flex">
+            <input type="date" id="in-date">
+            <select id="in-shift">
+                <option value="A Shift">A Shift</option>
+                <option value="B Shift">B Shift</option>
+                <option value="C Shift">C Shift</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group row-flex">
+        <input type="checkbox" id="chk-inc" checked>
+        <label style="flex:1">1. ഉൾപ്പെടുത്തിയിരിക്കുന്നു</label>
+        <input type="text" id="val-inc" placeholder="Code" oninput="this.value = this.value.toUpperCase()">
+    </div>
+
+    <div class="form-group row-flex">
+        <input type="checkbox" id="chk-exc">
+        <label style="flex:1">2. ഒഴിവാക്കിയിരിക്കുന്നു</label>
+        <input type="text" id="val-exc" placeholder="Code" oninput="this.value = this.value.toUpperCase()">
+    </div>
+
+    <div class="form-group row-flex">
+        <input type="checkbox" id="chk-wgt">
+        <label style="flex:1">3. Weight മാറ്റം</label>
+        <input type="text" id="val-wgt" placeholder="Items">
+    </div>
+
+    <div class="btn-group">
+        <button class="preview-btn" onmousedown="startPreview()" onmouseup="stopPreview()" ontouchstart="startPreview()" ontouchend="stopPreview()">Preview</button>
+        <button class="save-btn" id="save-btn" onclick="saveNotice()">Save to Firebase</button>
+        <button class="print-btn" onclick="window.print()">Print All</button>
+    </div>
+</div>
+
+<div id="current-preview" style="display: none; width: 100%; flex-direction: column; align-items: center; margin-bottom: 40px;"></div>
+
+<div id="history-list" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+    <div class="history-title" style="color:#888; font-size:12px; margin-bottom:5px;">LIVE DATABASE NOTICES</div>
+    <div id="notices-container" style="width:100%; display: flex; flex-direction: column; align-items: center;"></div>
+</div>
+
+<script>
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyB4akOCR4LTOK6HyvnxwMc7SKpbrMzjNC0",
+  authDomain: "compound-workaway.firebaseapp.com",
+  databaseURL: "https://compound-workaway-default-rtdb.firebaseio.com",
+  projectId: "compound-workaway",
+  storageBucket: "compound-workaway.firebasestorage.app",
+  messagingSenderId: "1020479561110",
+  appId: "1:1020479561110:web:f1cb9448e2bcf9184811b7"
+};
+
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+let allNotices = [];
+
+document.getElementById('in-date').valueAsDate = new Date();
+
+function formatDate(dateStr) {
+    if(!dateStr) return "--.--.----";
+    const d = new Date(dateStr);
+    return d.getDate().toString().padStart(2,'0') + '.' + (d.getMonth()+1).toString().padStart(2,'0') + '.' + d.getFullYear();
+}
+
+function generateNoticeHTML(data, isPreview = false) {
+    const fmtDate = formatDate(data.date);
+    const isMulti = data.wgtVal && (data.wgtVal.includes(',') || data.wgtVal.includes(' ') || data.wgtVal.includes('&'));
+    const wgtText = isMulti ? "എന്നിവയുടെ weight-ൽ മാറ്റമുണ്ട്." : "ന്റെ weight-ൽ മാറ്റമുണ്ട്.";
+
+    return `
+    <div class="notice-entry">
+        ${!isPreview ? `<div class="mini-delete" onclick="removeNotice('${data.id}')">x</div>` : ''}
+        <div class="notice-card">
+            <div class="header">NOTICE</div>
+            <div class="sub-header">
+                <div class="banbury">BANBURY</div>
+                <div class="date-section">DATE : ${fmtDate}</div>
+            </div>
+            <div class="content">
+                <div class="msg-line">
+                    <span class="bold">${data.mainCode || '---'}</span> മിക്സിങ് സ്റ്റേജിൽ, <span class="bold">${fmtDate}</span> <span class="bold">${data.shift}</span> മുതൽ,
+                </div>
+                ${data.incChecked && data.incVal ? `<div class="msg-line"><span class="bold">CODE ${data.incVal}</span> ഉൾപ്പെടുത്തിയിരിക്കുന്നു.</div>` : ''}
+                ${data.excChecked && data.excVal ? `<div class="msg-line"><span class="bold">CODE ${data.excVal}</span> ഒഴിവാക്കിയിരിക്കുന്നു.</div>` : ''}
+                ${data.wgtChecked && data.wgtVal ? `<div class="msg-line" style="margin-top:10px;"><span class="bold">${data.wgtVal}</span> ${wgtText}</div>` : ''}
+            </div>
+        </div>
+    </div>`;
+}
+
+// ഡാറ്റാബേസിൽ നിന്ന് നോട്ടീസുകൾ എടുക്കുന്നു
+database.ref('notices').on('value', (snapshot) => {
+    const data = snapshot.val();
+    allNotices = data ? Object.values(data) : [];
+    renderHistory();
+});
+
+function saveNotice() {
+    const data = getFormData();
+    if (!data.mainCode) { alert("Main Code നൽകുക"); return; }
+    
+    const saveBtn = document.getElementById('save-btn');
+    saveBtn.innerText = "Saving...";
+    saveBtn.disabled = true;
+
+    const noticeId = 'notice-' + Date.now();
+    data.id = noticeId;
+    data.timestamp = Date.now();
+
+    // ഒരേ മെയിൻ കോഡ് ഉള്ള പഴയത് ഒഴിവാക്കുന്നു
+    const updates = {};
+    allNotices.forEach(n => {
+        if(n.mainCode === data.mainCode) {
+            database.ref('notices/' + n.id).remove();
+        }
+    });
+
+    database.ref('notices/' + noticeId).set(data).then(() => {
+        saveBtn.innerText = "Save to Firebase";
+        saveBtn.disabled = false;
+        alert("നോട്ടീസ് സേവ് ചെയ്തു!");
+        clearForm();
+    }).catch(err => {
+        alert("Error: " + err.message);
+        saveBtn.disabled = false;
+    });
+}
+
+function removeNotice(id) {
+    if(confirm("ഈ നോട്ടീസ് ഡിലീറ്റ് ചെയ്യട്ടെ?")) {
+        database.ref('notices/' + id).remove();
+    }
+}
+
+function renderHistory() {
+    const container = document.getElementById('notices-container');
+    // സമയം അനുസരിച്ച് സോർട്ട് ചെയ്യുന്നു (പുതിയത് മുകളിൽ)
+    const sorted = allNotices.sort((a, b) => b.timestamp - a.timestamp);
+    
+    // 30 ദിവസം കഴിഞ്ഞവ ഡിലീറ്റ് ചെയ്യുന്നു
+    const oneMonthAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    sorted.forEach(n => {
+        if(n.timestamp < oneMonthAgo) database.ref('notices/' + n.id).remove();
+    });
+
+    container.innerHTML = sorted.map(n => generateNoticeHTML(n)).join('');
+}
+
+function getFormData() {
+    return {
+        mainCode: document.getElementById('in-main-code').value,
+        date: document.getElementById('in-date').value,
+        shift: document.getElementById('in-shift').value,
+        incChecked: document.getElementById('chk-inc').checked,
+        incVal: document.getElementById('val-inc').value,
+        excChecked: document.getElementById('chk-exc').checked,
+        excVal: document.getElementById('val-exc').value,
+        wgtChecked: document.getElementById('chk-wgt').checked,
+        wgtVal: document.getElementById('val-wgt').value
+    };
+}
+
+function clearForm() {
+    document.getElementById('in-main-code').value = "";
+    document.getElementById('val-inc').value = "";
+    document.getElementById('val-exc').value = "";
+    document.getElementById('val-wgt').value = "";
+}
+
+function startPreview() {
+    const data = getFormData();
+    const previewContainer = document.getElementById('current-preview');
+    previewContainer.innerHTML = generateNoticeHTML(data, true);
+    previewContainer.style.display = 'flex';
+}
+
+function stopPreview() {
+    document.getElementById('current-preview').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
