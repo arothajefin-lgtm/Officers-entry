@@ -26,6 +26,7 @@
 
         .notice-entry { width: 100%; max-width: 500px; margin-top: 25px; position: relative; }
         .mini-delete { position: absolute; top: -10px; right: -5px; background: #ff4d4d; color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; font-weight: bold; z-index: 5; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .mini-edit { position: absolute; top: -10px; right: 20px; background: #007bff; color: white; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; font-weight: bold; z-index: 5; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
 
         .notice-card { width: 100%; border: 2px solid #000; background: #fff; box-sizing: border-box; }
         .header { text-align: center; font-size: 26px; font-weight: bold; border-bottom: 2px solid #000; padding: 10px; letter-spacing: 2px; }
@@ -37,7 +38,7 @@
         .bold { font-weight: bold; }
 
         @media print {
-            .input-section, .btn-group, .mini-delete, .history-title { display: none !important; }
+            .input-section, .btn-group, .mini-delete, .mini-edit, .history-title { display: none !important; }
             body { padding: 0; background: white; }
             .notice-entry { margin-top: 15px; page-break-after: always; }
             .notice-card { border: 2px solid #000; box-shadow: none; }
@@ -47,6 +48,8 @@
 <body>
 
 <div class="input-section">
+    <input type="hidden" id="edit-id">
+
     <div class="form-group">
         <label>Main Code (eg: XMT544)</label>
         <input type="text" id="in-main-code" placeholder="Enter Code" oninput="this.value = this.value.toUpperCase()">
@@ -127,7 +130,10 @@ function generateNoticeHTML(data, isPreview = false) {
 
     return `
     <div class="notice-entry">
-        ${!isPreview ? `<div class="mini-delete" onclick="removeNotice('${data.id}')">x</div>` : ''}
+        ${!isPreview ? `
+            <div class="mini-edit" onclick="editNotice('${data.id}')">✎</div>
+            <div class="mini-delete" onclick="removeNotice('${data.id}')">x</div>
+        ` : ''}
         <div class="notice-card">
             <div class="header">NOTICE</div>
             <div class="sub-header">
@@ -161,14 +167,16 @@ function saveNotice() {
     saveBtn.innerText = "Saving...";
     saveBtn.disabled = true;
 
-    const noticeId = 'notice-' + Date.now();
+    // എഡിറ്റ് ചെയ്യുകയാണെങ്കിൽ പഴയ ഐഡി ഉപയോഗിക്കും, അല്ലെങ്കിൽ പുതിയത് ഉണ്ടാക്കും
+    const existingId = document.getElementById('edit-id').value;
+    const noticeId = existingId ? existingId : 'notice-' + Date.now();
+    
     data.id = noticeId;
     data.timestamp = Date.now();
 
-    // ഒരേ മെയിൻ കോഡ് ഉള്ള പഴയത് ഒഴിവാക്കുന്നു
-    const updates = {};
+    // ഒരേ മെയിൻ കോഡ് ഉള്ള പഴയത് ഒഴിവാക്കുന്നു (എഡിറ്റ് ചെയ്യുന്ന നോട്ടീസ് അല്ലാത്തവ മാത്രം)
     allNotices.forEach(n => {
-        if(n.mainCode === data.mainCode) {
+        if(n.mainCode === data.mainCode && n.id !== noticeId) {
             database.ref('notices/' + n.id).remove();
         }
     });
@@ -176,12 +184,32 @@ function saveNotice() {
     database.ref('notices/' + noticeId).set(data).then(() => {
         saveBtn.innerText = "Save to Firebase";
         saveBtn.disabled = false;
-        alert("നോട്ടീസ് സേവ് ചെയ്തു!");
+        alert(existingId ? "നോട്ടീസ് അപ്‌ഡേറ്റ് ചെയ്തു!" : "നോട്ടീസ് സേവ് ചെയ്തു!");
         clearForm();
+        window.scrollTo(0,0);
     }).catch(err => {
         alert("Error: " + err.message);
         saveBtn.disabled = false;
     });
+}
+
+function editNotice(id) {
+    const notice = allNotices.find(n => n.id === id);
+    if (notice) {
+        document.getElementById('edit-id').value = notice.id;
+        document.getElementById('in-main-code').value = notice.mainCode;
+        document.getElementById('in-date').value = notice.date;
+        document.getElementById('in-shift').value = notice.shift;
+        document.getElementById('chk-inc').checked = notice.incChecked;
+        document.getElementById('val-inc').value = notice.incVal || "";
+        document.getElementById('chk-exc').checked = notice.excChecked;
+        document.getElementById('val-exc').value = notice.excVal || "";
+        document.getElementById('chk-wgt').checked = notice.wgtChecked;
+        document.getElementById('val-wgt').value = notice.wgtVal || "";
+        
+        document.getElementById('save-btn').innerText = "Update Notice";
+        window.scrollTo(0,0);
+    }
 }
 
 function removeNotice(id) {
@@ -192,10 +220,8 @@ function removeNotice(id) {
 
 function renderHistory() {
     const container = document.getElementById('notices-container');
-    // സമയം അനുസരിച്ച് സോർട്ട് ചെയ്യുന്നു (പുതിയത് മുകളിൽ)
     const sorted = allNotices.sort((a, b) => b.timestamp - a.timestamp);
     
-    // 30 ദിവസം കഴിഞ്ഞവ ഡിലീറ്റ് ചെയ്യുന്നു
     const oneMonthAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
     sorted.forEach(n => {
         if(n.timestamp < oneMonthAgo) database.ref('notices/' + n.id).remove();
@@ -219,10 +245,13 @@ function getFormData() {
 }
 
 function clearForm() {
+    document.getElementById('edit-id').value = "";
     document.getElementById('in-main-code').value = "";
     document.getElementById('val-inc').value = "";
     document.getElementById('val-exc').value = "";
     document.getElementById('val-wgt').value = "";
+    document.getElementById('save-btn').innerText = "Save to Firebase";
+    document.getElementById('in-date').valueAsDate = new Date();
 }
 
 function startPreview() {
